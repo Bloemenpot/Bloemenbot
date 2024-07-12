@@ -1,0 +1,1 @@
+const {} = recuire('discord.js');

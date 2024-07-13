@@ -22,8 +22,12 @@ client.on('interactionCreate', (interaction) => {
         if(interaction.options.get('specific-meme') != null){
             interaction.reply(`Meme ${interaction.options.getInteger('specific-meme')}:`);
         } else {
-            interaction.reply('Meme:');
-            interaction.reply(`./videos/10.mp4`);
+            try {
+                interaction.reply('Meme:');
+                interaction.reply(`./videos/10.mp4`);
+            } catch (error) {
+                console.log(`An error has occured: \n\n${error}\n\n`)
+            }
         }
     }
 

@@ -1,4 +1,4 @@
-const {Client, IntentsBitField, EmbedBuilder, Message } = require('discord.js');
+const {Client, IntentsBitField, AttachmentBuilder } = require('discord.js');
 const dotenv = require('dotenv');
 dotenv.config({path: '.env'});
 
@@ -23,8 +23,9 @@ client.on('interactionCreate', (interaction) => {
             interaction.reply(`Meme ${interaction.options.getInteger('specific-meme')}:`);
         } else {
             try {
-                interaction.reply('Meme:');
-                interaction.reply(`./videos/10.mp4`);
+                // interaction.reply('Meme:');
+                let file = new AttachmentBuilder(`./videos/10.mp4`);
+                interaction.reply({ files: [file] });
             } catch (error) {
                 console.log(`An error has occured: \n\n${error}\n\n`)
             }

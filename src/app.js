@@ -3,14 +3,17 @@ const dotenv = require('dotenv');
 const fs = require("fs");
 dotenv.config({path: '.env'});
 
+if (!fs.existsSync('./data')){
+    fs.mkdirSync('./data');
+}
 if (!fs.existsSync('./data/serverinfo.json')){
-    fs.appendFile('./data/serverinfo.json', '', function (err) {
+    fs.appendFileSync('./data/serverinfo.json', '', function (err) {
         if (err) {
           // append failed
         } else {
           // done
         }
-    })
+    });
 }
 
 

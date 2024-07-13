@@ -1,6 +1,9 @@
 const {Client, IntentsBitField, AttachmentBuilder } = require('discord.js');
 const dotenv = require('dotenv');
+const fs = require("fs");
 dotenv.config({path: '.env'});
+
+const lastSentMemes = new Array();
 
 const client = new Client({
     intents: [
@@ -20,14 +23,31 @@ client.on('interactionCreate', (interaction) => {
 
     if(interaction.commandName === 'meme') {
         if(interaction.options.get('specific-meme') != null){
-            interaction.reply(`Meme ${interaction.options.getInteger('specific-meme')}:`);
+            let memeNumber = interaction.options.getInteger('specific-meme');
+            try {
+                if(fs.existsSync(`./videos/${memeNumber}.mp4`)){
+                    let file = new AttachmentBuilder(`./videos/${memeNumber}.mp4`);
+                    interaction.reply({ content:`Meme #${memeNumber}:`, files: [file] });
+                    return;
+                } else {
+                    interaction.reply({ content:`There is no meme with number #${memeNumber}`, flags: ["Ephemeral"] });
+                    return;
+                }
+            } catch (error) {
+                console.log(`An error has occured: \n\n${error}\n\n`);
+            }
         } else {
             try {
-                // interaction.reply('Meme:');
-                let file = new AttachmentBuilder(`./videos/10.mp4`);
-                interaction.reply({ files: [file] });
+                fs.readdir("./videos/", (err, files) => {
+                    let max = files.length - 1;
+                    let min = 0;
+
+                    let index = Math.round(Math.random() * (max - min) + min);
+                    let file = new AttachmentBuilder(`./videos/${files[index]}`);
+                    interaction.reply({ content:"Meme:", files: [file] });
+                });
             } catch (error) {
-                console.log(`An error has occured: \n\n${error}\n\n`)
+                console.log(`An error has occured: \n\n${error}\n\n`);
             }
         }
     }

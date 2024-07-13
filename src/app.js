@@ -1,4 +1,4 @@
-const {Client, IntentsBitField, EmbedBuilder } = require('discord.js');
+const {Client, IntentsBitField, EmbedBuilder, Message } = require('discord.js');
 const dotenv = require('dotenv');
 dotenv.config({path: '.env'});
 
@@ -23,6 +23,7 @@ client.on('interactionCreate', (interaction) => {
             interaction.reply(`Meme ${interaction.options.getInteger('specific-meme')}:`);
         } else {
             interaction.reply('Meme:');
+            interaction.reply(`./videos/10.mp4`);
         }
     }
 

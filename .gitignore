@@ -2,3 +2,5 @@
 .env
 #files
 videos/
+#server specific files
+serverinfo.json

@@ -3,7 +3,17 @@ const dotenv = require('dotenv');
 const fs = require("fs");
 dotenv.config({path: '.env'});
 
-const lastSentMemes = new Array();
+if (!fs.existsSync('./data/serverinfo.json')){
+    fs.appendFile('./data/serverinfo.json', '', function (err) {
+        if (err) {
+          // append failed
+        } else {
+          // done
+        }
+    })
+}
+
+
 
 const client = new Client({
     intents: [
@@ -57,6 +67,8 @@ client.on('interactionCreate', (interaction) => {
             //info on a specific meme
         } else {
             //global info on sent memes
+
+            //feitjes: wist je dat memebot (1.0) langer in de server zit dan @julia
         }
     }
 });

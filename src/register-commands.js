@@ -15,23 +15,24 @@ const commands = [
             }
         ]
     },
+    {
+        name: 'info',
+        description: 'Shows information & statistics from the bot'
+    },
 ];
 
 const rest = new REST({ version: '10' }).setToken(process.env.DCTOKEN);
 
 (async () => {
     try {
-        console.log('Registering slash commands...');
+        console.log(`Registering ${commands.length} slash commands...`);
 
-        await rest.put(
-            Routes.applicationGuildCommands(
-                process.env.CLIENT_ID, 
-                process.env.GUILD_ID_TESTING,
-            ),
-            {body: commands }
+        const data = await rest.put(
+            Routes.applicationCommands( process.env.CLIENT_ID ),
+            {body: commands },
         );
 
-        console.log('Slash commands are ready to be used!');
+        console.log(`${data.length} slash commands are ready to be used!`);
     } catch (error) {
         console.log(`Error: ${error}`);
     }

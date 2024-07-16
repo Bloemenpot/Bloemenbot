@@ -105,6 +105,8 @@ client.on("interactionCreate", (interaction) => {
         if (fs.existsSync(`./videos/${memeNumber}.mp4`)) {
           let file = new AttachmentBuilder(`./videos/${memeNumber}.mp4`);
           interaction.reply({ content: `Meme #${memeNumber}:`, files: [file] });
+          let fileName = file.attachment.replace('./videos/', '');
+          updateMemeCounter(interaction.guild.id, fileName);
           return;
         } else {
           interaction.reply({

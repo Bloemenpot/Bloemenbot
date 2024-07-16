@@ -1,4 +1,9 @@
-const { Client, IntentsBitField, AttachmentBuilder } = require("discord.js");
+const {
+  Client,
+  IntentsBitField,
+  AttachmentBuilder,
+  EmbedBuilder,
+} = require("discord.js");
 const dotenv = require("dotenv");
 dotenv.config({ path: ".env" });
 const fs = require("fs");
@@ -8,7 +13,9 @@ if (!fs.existsSync("./data")) {
 }
 if (!fs.existsSync("./data/serverinfo.json")) {
   fs.appendFileSync("./data/serverinfo.json", "[]", function (err) {
-    if (err) { console.error(err); }
+    if (err) {
+      console.error(err);
+    }
   });
 }
 const JSON_FILE = "./data/serverinfo.json";
@@ -17,8 +24,8 @@ let server = {
   id: "",
   serverName: "",
   serverImg: "",
-  memes: []
-}
+  memes: [],
+};
 
 const client = new Client({
   intents: [
@@ -30,30 +37,34 @@ const client = new Client({
 });
 
 function updateMemeCounter(sId, mId) {
-  fs.readFile(JSON_FILE, (error, dataRead) => {
-    let data = JSON.parse(dataRead);
-    data.forEach((serverData) => {
-      if (serverData.id == sId) { 
-        serverData.memeCounter = serverData.memeCounter + 1;
-        let memeIds = [];
-        serverData.memes.forEach((memeData) => {
-          memeIds.push(memeData.name);
-          if (memeData.name == mId) {
-            memeData.sent = memeData.sent + 1;
-          }
-        });
-        if (!memeIds.includes(mId)){
-          let meme = {
-            name: mId,
-            sent: 1
-          }
-          serverData.memes.push(meme);
+  // console.log("Reading data");
+  let dataRead = fs.readFileSync(JSON_FILE, {});
+  // console.log("Data read\n");
+  let data = JSON.parse(dataRead);
+  data.forEach((serverData) => {
+    if (serverData.id == sId) {
+      serverData.memeCounter = serverData.memeCounter + 1;
+      let memeIds = [];
+      serverData.memes.forEach((memeData) => {
+        memeIds.push(memeData.name);
+        if (memeData.name == mId) {
+          memeData.sent = memeData.sent + 1;
         }
+      });
+      if (!memeIds.includes(mId)) {
+        let meme = {
+          name: mId,
+          sent: 1,
+        };
+        serverData.memes.push(meme);
       }
-    })
-    data = JSON.stringify(data); fs.writeFile(JSON_FILE, data, (error) => {});
+    }
   });
-  console.log(`Meme sent in ${sId}`);
+  data = JSON.stringify(data);
+  // console.log("Writing data");
+  fs.writeFileSync(JSON_FILE, data);
+  // console.log("Data written\n");
+  // console.log(`sent meme: ${mId}, in ${sId}`);
 }
 
 client.on("ready", (c) => {
@@ -70,25 +81,30 @@ client.on("ready", (c) => {
       if (!serverIdList.includes(guild.id)) {
         console.log("New server found!\nAdding to database!\n");
         server = {
-            id: guild.id,
-            serverName: guild.name,
-            serverImg: guild.icon,
-            memeCounter: 0,
-            memes: [],
-          }
-        ;
+          id: guild.id,
+          approvedChannels: [],
+          serverName: guild.name,
+          serverImg: guild.icon,
+          memeCounter: 0,
+          memes: [],
+        };
         data.push(server);
         console.log("New server added to database!\n");
       } else {
         data.forEach((serverData) => {
-          if (serverData.id == guild.id){
-            if (serverData.serverName != guild.name) { serverData.serverName = guild.name; }
-            if (serverData.serverImg != guild.icon) { serverData.serverImg = guild.icon; }
+          if (serverData.id == guild.id) {
+            if (serverData.serverName != guild.name) {
+              serverData.serverName = guild.name;
+            }
+            if (serverData.serverImg != guild.icon) {
+              serverData.serverImg = guild.icon;
+            }
           }
-        })
+        });
       }
     });
-    data = JSON.stringify(data); fs.writeFile(JSON_FILE, data, (error) => {});
+    data = JSON.stringify(data);
+    fs.writeFile(JSON_FILE, data, (error) => {});
   });
 });
 
@@ -99,13 +115,26 @@ client.on("interactionCreate", (interaction) => {
   if (!interaction.isChatInputCommand()) return;
 
   if (interaction.commandName === "meme") {
+    var file = fs.readFileSync(JSON_FILE, ({}));
+    file = JSON.parse(file);
+    file.forEach(server => {
+      if (server.id === interaction.guild.id){
+        if (server.approvedChannels.includes(interaction.channel.id)) {
+          console.log("Correct channel")
+        } else {
+          console.log("Incorrect Channel")
+          console.log(`Channel ID: ${interaction.channel.id}`)
+        }
+      }
+    });
+     
     if (interaction.options.get("specific-meme") != null) {
       let memeNumber = interaction.options.getInteger("specific-meme");
       try {
         if (fs.existsSync(`./videos/${memeNumber}.mp4`)) {
           let file = new AttachmentBuilder(`./videos/${memeNumber}.mp4`);
           interaction.reply({ content: `Meme #${memeNumber}:`, files: [file] });
-          let fileName = file.attachment.replace('./videos/', '');
+          let fileName = file.attachment.replace("./videos/", "");
           updateMemeCounter(interaction.guild.id, fileName);
           return;
         } else {
@@ -116,33 +145,97 @@ client.on("interactionCreate", (interaction) => {
           return;
         }
       } catch (error) {
-        console.error(`An error has occured: \n\n${error}\n\n`); return;
+        console.error(`An error has occured: \n\n${error}\n\n`);
+        return;
       }
     } else {
       try {
         fs.readdir("./videos/", (err, files) => {
-          let max = files.length - 1;
-          let min = 0;
+          let amount = 1;
+          interaction.deferReply();
+          interaction.deleteReply();
+          if (interaction.options.get("amount") != null) {
+            amount = interaction.options.getInteger("amount");
+          }
+          for (let i = 0; i < amount; i++) {
+            setTimeout(() => {
+              let max = files.length - 1;
+              let min = 0;
 
-          let index = Math.round(Math.random() * (max - min) + min);
-          let file = new AttachmentBuilder(`./videos/${files[index]}`);
-          interaction.reply({ content: `Meme: ${files[index]}`, files: [file] });
-          updateMemeCounter(interaction.guild.id, files[index]);
+              let index = Math.round(Math.random() * (max - min) + min);
+              let file = new AttachmentBuilder(`./videos/${files[index]}`);
+              interaction.channel.send({
+                content: `Meme: ${files[index]}`,
+                files: [file],
+              });
+              updateMemeCounter(interaction.guild.id, files[index]);
+            }, 500);
+          }
         });
       } catch (error) {
-        console.error(`An error has occured: \n\n${error}\n\n`); return;
+        console.error(`An error has occured: \n\n${error}\n\n`);
+        return;
       }
     }
   }
 
   if (interaction.commandName === "info") {
-    if (interaction.options.get("meme") != null) {
-      //info on a specific meme
+    fs.readFile(JSON_FILE, (error, dataRead) => {
+      let data = JSON.parse(dataRead);
+      data.forEach((serverData) => {
+        if (serverData.id === interaction.guild.id) {
+          var res = Math.max.apply(
+            Math,
+            serverData.memes.map(function (o) {
+              return o.sent;
+            })
+          );
+          var obj = serverData.memes.find(function (o) {
+            return o.sent == res;
+          });
+          const embed = new EmbedBuilder()
+            .setTitle("Server Info")
+            .setDescription("Information about the memes from this server.")
+            .setColor("Blue")
+            .addFields({ name: "\n", value: " ", inline: false })
+            .addFields({
+              name: "Total sent memes",
+              value: `There have been ${serverData.memeCounter.toString()} memes sent`,
+              inline: false,
+            })
+            .addFields({
+              name: "Most sent meme",
+              value: `meme ${obj.name} was sent a total of ${obj.sent} times`,
+              inline: false,
+            })
+            .setThumbnail(interaction.guild.iconURL());
+          interaction.reply({ embeds: [embed] });
+        }
+      });
+    });
+  }
+
+  if (interaction.commandName === "config") {
+    if (interaction.options.getBoolean("add-meme-channel")) {
+      var file = fs.readFileSync(JSON_FILE, ({}));
+      file = JSON.parse(file);
+      file.forEach((serverData) => {
+        if (serverData.id === interaction.guild.id){
+          if (serverData.approvedChannels.includes(interaction.channelId)){
+            interaction.reply({ content: "This channel has already been added!", ephemeral: true });
+          } else {
+            serverData.approvedChannels.push(interaction.channelId);
+            interaction.reply("Added this channel as a meme channel!");
+          }
+        }
+      })
+      fs.writeFileSync(JSON_FILE, JSON.stringify(file));
     } else {
-      //global info on sent memes
-      //feitjes: wist je dat memebot (1.0) langer in de server zit dan @julia
+      interaction.reply("Removed this channel as a meme channel!")
     }
   }
 });
+
+client.on("messageCreate", (message) => {});
 
 client.login(process.env.DCTOKEN);

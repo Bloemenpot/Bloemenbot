@@ -231,7 +231,19 @@ client.on("interactionCreate", (interaction) => {
       })
       fs.writeFileSync(JSON_FILE, JSON.stringify(file));
     } else {
-      interaction.reply("Removed this channel as a meme channel!")
+      var file = fs.readFileSync(JSON_FILE, ({}));
+      file = JSON.parse(file);
+      file.forEach((serverData) => {
+        if (serverData.id === interaction.guildId) {
+          if (serverData.approvedChannels.includes(interaction.channelId)){
+            serverData.approvedChannels = serverData.approvedChannels.filter(e => e !== interaction.channelId);
+            interaction.reply("Removed this channel as a meme channel!")
+          } else {
+            interaction.reply({ content: "This channel is not a meme channel!", ephemeral: true });
+          }
+        }
+      });
+      fs.writeFileSync(JSON_FILE, JSON.stringify(file));
     }
   }
 });

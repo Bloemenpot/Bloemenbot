@@ -115,70 +115,77 @@ client.on("interactionCreate", (interaction) => {
   if (!interaction.isChatInputCommand()) return;
 
   if (interaction.commandName === "meme") {
-    var file = fs.readFileSync(JSON_FILE, ({}));
+    var file = fs.readFileSync(JSON_FILE, {});
+    var allowedChannel = false;
     file = JSON.parse(file);
-    file.forEach(server => {
-      if (server.id === interaction.guild.id){
+    file.forEach((server) => {
+      if (server.id === interaction.guild.id) {
         if (server.approvedChannels.includes(interaction.channel.id)) {
-          console.log("Correct channel")
-        } else {
-          console.log("Incorrect Channel")
-          console.log(`Channel ID: ${interaction.channel.id}`)
-        }
-      }
-    });
-     
-    if (interaction.options.get("specific-meme") != null) {
-      let memeNumber = interaction.options.getInteger("specific-meme");
-      try {
-        if (fs.existsSync(`./videos/${memeNumber}.mp4`)) {
-          let file = new AttachmentBuilder(`./videos/${memeNumber}.mp4`);
-          interaction.reply({ content: `Meme #${memeNumber}:`, files: [file] });
-          let fileName = file.attachment.replace("./videos/", "");
-          updateMemeCounter(interaction.guild.id, fileName);
-          return;
+          if (interaction.options.get("specific-meme") != null) {
+            let memeNumber = interaction.options.getInteger("specific-meme");
+            try {
+              if (fs.existsSync(`./videos/${memeNumber}.mp4`)) {
+                let file = new AttachmentBuilder(`./videos/${memeNumber}.mp4`);
+                interaction.reply({
+                  content: `Meme: ${memeNumber}`,
+                  files: [file],
+                });
+                let fileName = file.attachment.replace("./videos/", "");
+                updateMemeCounter(interaction.guild.id, fileName);
+                return;
+              } else {
+                interaction.reply({
+                  content: `There is no meme with number #${memeNumber}`,
+                  flags: ["Ephemeral"],
+                });
+                return;
+              }
+            } catch (error) {
+              console.error(`An error has occured: \n\n${error}\n\n`);
+              return;
+            }
+          } else {
+            try {
+              fs.readdir("./videos/", (err, files) => {
+                let amount = 1;
+                interaction.deferReply();
+                interaction.deleteReply();
+                if (interaction.options.get("amount") != null) {
+                  amount = interaction.options.getInteger("amount");
+                }
+                for (let i = 0; i < amount; i++) {
+                  setTimeout(() => {
+                    let max = files.length - 1;
+                    let min = 0;
+
+                    let index = Math.round(Math.random() * (max - min) + min);
+                    let file = new AttachmentBuilder(
+                      `./videos/${files[index]}`
+                    );
+
+                    interaction.channel.send({
+                      content: `Meme: ${files[index].split(".")[0]}`,
+                      files: [file],
+                    });
+                    updateMemeCounter(interaction.guild.id, files[index]);
+                  }, 500);
+                }
+              });
+            } catch (error) {
+              console.error(`An error has occured: \n\n${error}\n\n`);
+              return;
+            }
+          }
         } else {
           interaction.reply({
-            content: `There is no meme with number #${memeNumber}`,
-            flags: ["Ephemeral"],
+            content: "This is not a meme approved channel!",
+            ephemeral: true,
           });
           return;
         }
-      } catch (error) {
-        console.error(`An error has occured: \n\n${error}\n\n`);
-        return;
       }
-    } else {
-      try {
-        fs.readdir("./videos/", (err, files) => {
-          let amount = 1;
-          interaction.deferReply();
-          interaction.deleteReply();
-          if (interaction.options.get("amount") != null) {
-            amount = interaction.options.getInteger("amount");
-          }
-          for (let i = 0; i < amount; i++) {
-            setTimeout(() => {
-              let max = files.length - 1;
-              let min = 0;
-
-              let index = Math.round(Math.random() * (max - min) + min);
-              let file = new AttachmentBuilder(`./videos/${files[index]}`);
-              interaction.channel.send({
-                content: `Meme: ${files[index]}`,
-                files: [file],
-              });
-              updateMemeCounter(interaction.guild.id, files[index]);
-            }, 500);
-          }
-        });
-      } catch (error) {
-        console.error(`An error has occured: \n\n${error}\n\n`);
-        return;
-      }
-    }
+    });
   }
-
   if (interaction.commandName === "info") {
     fs.readFile(JSON_FILE, (error, dataRead) => {
       let data = JSON.parse(dataRead);
@@ -217,29 +224,37 @@ client.on("interactionCreate", (interaction) => {
 
   if (interaction.commandName === "config") {
     if (interaction.options.getBoolean("add-meme-channel")) {
-      var file = fs.readFileSync(JSON_FILE, ({}));
+      var file = fs.readFileSync(JSON_FILE, {});
       file = JSON.parse(file);
       file.forEach((serverData) => {
-        if (serverData.id === interaction.guild.id){
-          if (serverData.approvedChannels.includes(interaction.channelId)){
-            interaction.reply({ content: "This channel has already been added!", ephemeral: true });
+        if (serverData.id === interaction.guild.id) {
+          if (serverData.approvedChannels.includes(interaction.channelId)) {
+            interaction.reply({
+              content: "This channel has already been added!",
+              ephemeral: true,
+            });
           } else {
             serverData.approvedChannels.push(interaction.channelId);
             interaction.reply("Added this channel as a meme channel!");
           }
         }
-      })
+      });
       fs.writeFileSync(JSON_FILE, JSON.stringify(file));
     } else {
-      var file = fs.readFileSync(JSON_FILE, ({}));
+      var file = fs.readFileSync(JSON_FILE, {});
       file = JSON.parse(file);
       file.forEach((serverData) => {
         if (serverData.id === interaction.guildId) {
-          if (serverData.approvedChannels.includes(interaction.channelId)){
-            serverData.approvedChannels = serverData.approvedChannels.filter(e => e !== interaction.channelId);
-            interaction.reply("Removed this channel as a meme channel!")
+          if (serverData.approvedChannels.includes(interaction.channelId)) {
+            serverData.approvedChannels = serverData.approvedChannels.filter(
+              (e) => e !== interaction.channelId
+            );
+            interaction.reply("Removed this channel as a meme channel!");
           } else {
-            interaction.reply({ content: "This channel is not a meme channel!", ephemeral: true });
+            interaction.reply({
+              content: "This channel is not a meme channel!",
+              ephemeral: true,
+            });
           }
         }
       });
@@ -248,6 +263,33 @@ client.on("interactionCreate", (interaction) => {
   }
 });
 
-client.on("messageCreate", (message) => {});
+client.on("messageCreate", (interaction) => {
+  if (interaction.content === "meme") {
+    var file = fs.readFileSync(JSON_FILE, {});
+    file = JSON.parse(file);
+    file.forEach((server) => {
+      if (server.approvedChannels.includes(interaction.channel.id)) {
+        fs.readdir("./videos/", (err, files) => {
+          let amount = 1;
+          for (let i = 0; i < amount; i++) {
+            setTimeout(() => {
+              let max = files.length - 1;
+              let min = 0;
+
+              let index = Math.round(Math.random() * (max - min) + min);
+              let file = new AttachmentBuilder(`./videos/${files[index]}`);
+
+              interaction.channel.send({
+                content: `Meme: ${files[index].split(".")[0]}`,
+                files: [file],
+              });
+              updateMemeCounter(interaction.guild.id, files[index]);
+            }, 500);
+          }
+        });
+      }
+    });
+  }
+});
 
 client.login(process.env.DCTOKEN);

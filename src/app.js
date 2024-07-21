@@ -37,9 +37,7 @@ const client = new Client({
 });
 
 function updateMemeCounter(sId, mId) {
-  // console.log("Reading data");
   let dataRead = fs.readFileSync(JSON_FILE, {});
-  // console.log("Data read\n");
   let data = JSON.parse(dataRead);
   data.forEach((serverData) => {
     if (serverData.id == sId) {
@@ -61,10 +59,7 @@ function updateMemeCounter(sId, mId) {
     }
   });
   data = JSON.stringify(data);
-  // console.log("Writing data");
   fs.writeFileSync(JSON_FILE, data);
-  // console.log("Data written\n");
-  // console.log(`sent meme: ${mId}, in ${sId}`);
 }
 
 client.on("ready", (c) => {
@@ -108,15 +103,11 @@ client.on("ready", (c) => {
   });
 });
 
-//read: fs.readfile("data.json" (error, data) => {}); > const x = JSON.parse(data);
-//write: const x = JSON.stringify(data); > fs.writefile("data.json", data, (error) => {});
-
 client.on("interactionCreate", (interaction) => {
   if (!interaction.isChatInputCommand()) return;
 
   if (interaction.commandName === "meme") {
     var file = fs.readFileSync(JSON_FILE, {});
-    var allowedChannel = false;
     file = JSON.parse(file);
     file.forEach((server) => {
       if (server.id === interaction.guild.id) {
@@ -124,13 +115,13 @@ client.on("interactionCreate", (interaction) => {
           if (interaction.options.get("specific-meme") != null) {
             let memeNumber = interaction.options.getInteger("specific-meme");
             try {
-              if (fs.existsSync(`./videos/${memeNumber}.mp4`)) {
-                let file = new AttachmentBuilder(`./videos/${memeNumber}.mp4`);
+              if (fs.existsSync(`./memes/${memeNumber}.mp4`)) {
+                let file = new AttachmentBuilder(`./memes/${memeNumber}.mp4`);
                 interaction.reply({
                   content: `Meme: ${memeNumber}`,
                   files: [file],
                 });
-                let fileName = file.attachment.replace("./videos/", "");
+                let fileName = file.attachment.replace("./memes/", "");
                 updateMemeCounter(interaction.guild.id, fileName);
                 return;
               } else {
@@ -146,7 +137,7 @@ client.on("interactionCreate", (interaction) => {
             }
           } else {
             try {
-              fs.readdir("./videos/", (err, files) => {
+              fs.readdir("./memes/", (err, files) => {
                 let amount = 1;
                 interaction.deferReply();
                 interaction.deleteReply();
@@ -160,7 +151,7 @@ client.on("interactionCreate", (interaction) => {
 
                     let index = Math.round(Math.random() * (max - min) + min);
                     let file = new AttachmentBuilder(
-                      `./videos/${files[index]}`
+                      `./memes/${files[index]}`
                     );
 
                     interaction.channel.send({
@@ -269,7 +260,7 @@ client.on("messageCreate", (interaction) => {
     file = JSON.parse(file);
     file.forEach((server) => {
       if (server.approvedChannels.includes(interaction.channel.id)) {
-        fs.readdir("./videos/", (err, files) => {
+        fs.readdir("./memes/", (err, files) => {
           let amount = 1;
           for (let i = 0; i < amount; i++) {
             setTimeout(() => {
@@ -277,7 +268,7 @@ client.on("messageCreate", (interaction) => {
               let min = 0;
 
               let index = Math.round(Math.random() * (max - min) + min);
-              let file = new AttachmentBuilder(`./videos/${files[index]}`);
+              let file = new AttachmentBuilder(`./memes/${files[index]}`);
 
               interaction.channel.send({
                 content: `Meme: ${files[index].split(".")[0]}`,

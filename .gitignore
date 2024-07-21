@@ -1,6 +1,6 @@
 #dotenv files
 .env
 #files
-videos/
+memes/*
 #server specific files
 serverinfo.json
